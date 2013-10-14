@@ -1,0 +1,172 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <string.h>
+#include "url_func.h"
+#include <unistd.h>
+#include <sys/stat.h>
+#include <sys/times.h>
+//#include "poll.h" 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+char*  get_string(char del,int fd){
+	int n=0,nread;
+ 	char buff[1],*url;
+		
+ 	while ( (nread = read (fd ,buff ,1 )) > 0   ){
+ 	 	if(nread<0){perror("Read");exit(-1);}
+  		if( buff[0] == del  ){
+   			n++;
+   			break;
+  		}  
+  	n++;
+ 	}
+ 	if(lseek(fd,(off_t)-n,SEEK_CUR)<0){ perror("lseek");exit(-1);}
+ 	if( (url = malloc(sizeof(char)*n) ) == NULL){perror("Malloc");exit(-1);} 
+ 	if( (nread =  read(fd,url,n-1) ) < 0){perror("Read_2");exit(-1);}
+ 	url[nread]='\0';
+ 	if ( read(fd,buff,1) < 0 ){perror("Read_3");exit(-1);}
+ 	//printf("|%s|\n",url);
+	return url;                     
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void main(){//(char* filename,char* url){
+	double t1, t2, cpu_time;
+	struct tms tb1, tb2;
+	double ticspersec;
+	ticspersec = (double) sysconf(_SC_CLK_TCK);
+	t1 = (double) times(&tb1);
+	
+	char* filename,* url;
+	char given_url[]="http://google.com";
+	int size=strlen(given_url);
+	size+=strlen("wget  2<&1 | awk '/Saving to:/ {print $3}' | sed 's/`//g' | sed \"s/'//g\" ");
+	char* stored;
+	stored=(char*)malloc((size+1)*sizeof(char));	
+	snprintf(stored, size, "wget %s 2<&1 | awk '/Saving to:/ {print $3}' | sed 's/`//g' | sed \"s/'//g\" ", given_url);
+	FILE *fp;
+	if( (fp=popen(stored,"r") ) ==NULL){ printf("woops\n");}
+	free(stored);
+	char path[256];
+ 	char* t=fgets(path, 256, fp);
+ 	if(t!=NULL){
+ 	//printf("path=[%s]\n",path);
+ 	pclose(fp);
+ 	path[strlen(path)-1]='\0';
+	filename=path;
+	url=given_url;
+	char* host=get_host(given_url);
+	printf("REAL HOST: [%s]\n",host);
+	char* temp=NULL,*copy=NULL,*fixed=NULL; 
+	int nread,fd,count=0,img_count=0;
+ 	char buff[1],buff2[9];
+	if ( (fd = open (filename, O_RDONLY )) == -1 ){perror("open");exit(-1);}
+	while ( (nread = read (fd ,buff ,1 )) > 0   ){
+ 	 	if(nread<0){perror("Read");exit(-1);}
+  		if( buff[0] == '<'){
+  			nread = read (fd ,buff2 ,8 );if(nread<0){perror("Read");exit(-1);}
+  			buff2[nread]='\0';
+  			if( !strcmp(buff2,"a href=\"") ){
+  				temp=get_string('"',fd);
+ 				if (temp[0]=='/'){
+ 					size=strlen(temp);
+ 					if(host[strlen(host)-1]=='/'){
+ 						copy=temp+1;
+ 					}else{ copy=temp;}
+ 					size+=strlen(host);
+ 					fixed=(char*)malloc((size+1)*sizeof(char));
+ 					strcpy(fixed,host);
+ 					strcat(fixed, copy);
+ 					printf("{%s}\n",fixed);
+ 					free(fixed);
+ 				}else{printf("{%s}\n",temp);}
+   			free(temp);
+   			temp=NULL;
+   			count++;
+   			}
+   			else{
+   				if(nread>4){
+   					buff2[3]='\0';
+ 				}else{continue;}
+ 				if( !strcmp(buff2,"img") ){img_count++;}
+   			} 
+   			
+  		}
+  	}
+	/*
+  	u_info info_pack;
+  	//printf("Total links: {%d}\n",count); 
+  	info_pack.total_url=count;	
+  	//printf("Total Images: {%d}\n",img_count);
+  	info_pack.total_img=img_count;
+	struct stat st;
+	
+    	if (stat(filename, &st) == 0) {
+       // printf("Size in byes: {%d}\n", (int)st.st_size);
+    	}else{ perror("stat");exit(-1);}
+    	info_pack.total_size=(int)st.st_size;
+	char * pch,*pch2,*p2;
+  	char* end;
+  	pch=strchr(filename,'.');
+  	if(!(pch==NULL)){		
+  		p2=filename+(pch-filename+1);
+  		pch2=strchr(p2,'.');
+  		if(!(pch2==NULL))
+  			*pch2='\0';
+  		size+=strlen(p2);
+  		end=(char*)malloc((size+1)*sizeof(char));
+ 		strcpy(end,p2);				
+  		//printf("Type:{%s}\n",end);
+	}else{ end="Unknown Type";}
+	size=strlen(end);
+	info_pack.type=(char*)malloc((size+1)*sizeof(char));
+    	strcpy(info_pack.type,end);
+    	free(end);
+
+	t2 = (double) times(&tb2);
+	cpu_time = (double) ((tb2.tms_utime + tb2.tms_stime) -(tb1.tms_utime + tb1.tms_stime));
+	//printf("Run time:{%lf}sec \nCPU time:{%lf}sec\n\n",(t2 - t1)/ticspersec, cpu_time/ticspersec);	
+	info_pack.Rtime=(t2 - t1)/ticspersec;
+	info_pack.Ctime=cpu_time/ticspersec;
+	
+	print_poll(info_pack);
+	*/
+	}else{ printf("404 or something\n"); }
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+char* get_host(char* url){
+	char* host=NULL,*temp;
+	int size=strlen(url);
+	host=(char*)malloc((size+1)*sizeof(char));
+	strcpy(host,url);
+	temp=host+7;
+	char* pch=strchr(temp,'/');
+	if(!(pch==NULL))
+		*pch='\0';
+	return host;
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

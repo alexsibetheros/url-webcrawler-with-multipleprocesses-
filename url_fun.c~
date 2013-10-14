@@ -1,0 +1,34 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <string.h>
+
+char*  get_string(char del){
+ 	int n=0;
+ 	FILE *fp;
+ 	char c,*url;
+// del='\n';
+ 
+ 	if ( (fp = fopen ("testbig" , "r" )) == NULL ){perror("fopen");return -1;} 
+ 
+ 	while ( (c = getc(fp) ) != EOF  ){
+  	if( c==EOF && !feof(fp)) {perror("read");exit(-1);}
+  	if( c == del  ){
+   		n++;
+   		break;
+  	}  
+  	n++;
+ 	}
+  
+ 	fseek(fp,-n,SEEK_CUR);
+ 	if( (url = malloc(sizeof(char)*n) ) == NULL){
+ 	 	perror("allocation");
+  	exit(-1);
+ 	}	 
+ 	if( fgets(url,n,fp) < 0){perror("read");exit(-1);}
+ 	c=getc(fp);
+ 	if( c==EOF && !feof(fp) ){perror("read");exit(-1);} 
+ 	//printf("|%s|\n",url);
+ 	return url;
+                     
+}

@@ -1,0 +1,102 @@
+#include "queue.h"
+#include <stdio.h>
+#include <stdlib.h>
+#define FALSE 0
+//#define NULL 0
+
+
+/*main () {
+    queue listmember, *q_pointer;
+    int     data,
+            choice;
+
+    q_pointer = NULL;
+    do {
+	Menu (&choice);
+	switch (choice) {
+	    case 1: 
+		printf ("Enter data item value to add  ");
+		scanf ("%d", &data);
+		q_pointer = AddItem (q_pointer, data);
+		break;
+	    case 2: 
+		if (q_pointer == NULL)
+		    printf ("Queue empty!\n");
+		else
+		    q_pointer = RemoveItem (q_pointer);
+		break;
+	    case 3: 
+		PrintQueue (q_pointer);
+		break;
+
+	    case 4: 
+		break;
+
+	    default: 
+		printf ("Invalid menu choice - try again\n");
+		break;
+	}
+    } while (choice != 4);
+    ClearQueue (q_pointer);
+}				
+/*
+void Menu (int *choice) {
+
+    char    local;
+
+    printf ("\nEnter\t1 to add item,\n\t2 to remove item\n\
+\t3 to print queue\n\t4 to quit\n");
+    do {
+	local = getchar ();
+	if ((isdigit (local) == FALSE) && (local != '\n')) {
+	    printf ("\nyou must enter an integer.\n");
+	    printf ("Enter 1 to add, 2 to remove, 3 to print, 4 to quit\n");
+	}
+    } while (isdigit ((unsigned char) local) == FALSE);
+    *choice = (int) local - '0';
+}
+*/
+queue *AddItem (queue* q_pointer, int data) {
+
+    queue *lp = q_pointer;
+    if (q_pointer != NULL) {
+	while (q_pointer -> link != NULL)
+	    q_pointer = (queue*)q_pointer->link;
+	q_pointer -> link = (struct queue  *) malloc (sizeof (queue));
+	q_pointer = (queue*)q_pointer->link;
+	q_pointer -> link = NULL;
+	q_pointer -> dataitem = data;
+	return lp;
+    }
+    else {
+	q_pointer = ( queue *) malloc (sizeof (queue));
+	q_pointer -> link = NULL;
+	q_pointer -> dataitem = data;
+	return q_pointer;
+    }
+}
+
+queue *RemoveItem (queue *q_pointer) {
+    queue * tempp;
+    printf ("Element removed is %d\n", q_pointer -> dataitem);
+    tempp = (queue*)q_pointer -> link;
+    free (q_pointer);
+    return tempp;
+}
+
+void PrintQueue (queue * q_pointer) {
+    if (q_pointer == NULL)
+	printf ("queue is empty!\n");
+    else
+	while (q_pointer != NULL) {
+	    printf ("%d\t", q_pointer -> dataitem);
+	    q_pointer =(queue*)q_pointer -> link;
+	}
+    printf ("\n");
+}
+
+void ClearQueue (queue * q_pointer) {
+    while (q_pointer != NULL) {
+	q_pointer = RemoveItem (q_pointer);
+    }
+}
